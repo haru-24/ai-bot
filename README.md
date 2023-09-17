@@ -1,1 +1,1 @@
-# go_chatgpt_test
+# golang chat GPT test repositry
