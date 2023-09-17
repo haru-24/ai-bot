@@ -1,13 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"strings"
 
+	"github.com/haru-24/go_chatgpt_test/model"
 	"github.com/joho/godotenv"
 )
 
@@ -19,15 +20,31 @@ func loadEnv() {
 	}
 }
 
-func main() {
+func inputKeybord() string {
+	var inputMessage string
+	print("[質問を入力してください。]:")
+	fmt.Scan(&inputMessage)
+
+	return inputMessage
+}
+
+func requestChatGpt(reqMessage string) {
 
 	loadEnv()
 	apiKey := os.Getenv("CHAT_GPT_APIKEY")
 
+	message := []*model.RequestMessage{
+		model.NewRequestMessage("user", reqMessage),
+	}
+	data, err := json.Marshal(model.NewRequest("gpt-3.5-turbo", message, 40))
+
+	if err != nil {
+		fmt.Println("failue json marshal", err)
+		return
+	}
+
 	url := "https://api.openai.com/v1/chat/completions"
-	req, err := http.NewRequest("POST", url, strings.NewReader(`{
-		"model":"gpt-3.5-turbo",
-		"messages": [{"role": "user", "content": "自己紹介をして下さい"}]}`))
+	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
 	if err != nil {
 		fmt.Println("create request error", err)
 		return
@@ -52,11 +69,22 @@ func main() {
 		return
 	}
 
-	fmt.Println("body", string(body))
-
 	// var response Response
-	var response interface{}
-	json.Unmarshal(body, &response)
-	fmt.Println("response:", response)
+	var response model.Response
+	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Println("failuer json unmarshal", err)
+		return
+	}
 
+	for _, r := range response.Choices {
+		fmt.Printf("[%s]: %s\n", r.Message.Role, r.Message.Content)
+	}
+
+}
+
+func main() {
+	for {
+		message := inputKeybord()
+		requestChatGpt(message)
+	}
 }
