@@ -34,9 +34,9 @@ func requestChatGpt(reqMessage string) {
 	apiKey := os.Getenv("CHAT_GPT_APIKEY")
 
 	message := []*model.RequestMessage{
-		model.NewRequestMessage("user", reqMessage),
+		model.NewRequestMessage("user", reqMessage+"(この質問に100文字以内で答えてください)"),
 	}
-	data, err := json.Marshal(model.NewRequest("gpt-3.5-turbo", message, 40))
+	data, err := json.Marshal(model.NewRequest("gpt-3.5-turbo", message, 150))
 
 	if err != nil {
 		fmt.Println("failue json marshal", err)
