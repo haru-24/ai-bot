@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/haru-24/go_chatgpt_test/model"
 	"github.com/joho/godotenv"
+	"github.com/line/line-bot-sdk-go/linebot"
 )
 
 func loadEnv() {
@@ -20,15 +22,7 @@ func loadEnv() {
 	}
 }
 
-func inputKeybord() string {
-	var inputMessage string
-	print("[質問を入力してください。]:")
-	fmt.Scan(&inputMessage)
-
-	return inputMessage
-}
-
-func requestChatGpt(reqMessage string) {
+func requestChatGpt(reqMessage string) string {
 
 	loadEnv()
 	apiKey := os.Getenv("CHAT_GPT_APIKEY")
@@ -40,14 +34,14 @@ func requestChatGpt(reqMessage string) {
 
 	if err != nil {
 		fmt.Println("failue json marshal", err)
-		return
+		return string(err.Error())
 	}
 
 	url := "https://api.openai.com/v1/chat/completions"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
 	if err != nil {
 		fmt.Println("create request error", err)
-		return
+		return string(err.Error())
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -58,7 +52,7 @@ func requestChatGpt(reqMessage string) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("create request error", err)
-		return
+		return string(err.Error())
 	}
 	defer resp.Body.Close()
 
@@ -66,25 +60,71 @@ func requestChatGpt(reqMessage string) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("read and parse response error:", err)
-		return
+		return string(err.Error())
 	}
 
 	// var response Response
 	var response model.Response
 	if err := json.Unmarshal(body, &response); err != nil {
 		fmt.Println("failuer json unmarshal", err)
-		return
+		return string(err.Error())
 	}
 
+	var return_msg string
 	for _, r := range response.Choices {
 		fmt.Printf("[%s]: %s\n", r.Message.Role, r.Message.Content)
+		return_msg = r.Message.Content
 	}
-
+	return return_msg
 }
 
 func main() {
-	for {
-		message := inputKeybord()
-		requestChatGpt(message)
+	loadEnv()
+
+	bot, err := linebot.New(
+		os.Getenv("LINE_BOT_CHANNEL_SECRET"),
+		os.Getenv("LINE_BOT_CHANNEL_TOKEN"),
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+	router := gin.Default()
+
+	router.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Hello World!!")
+	})
+
+	router.POST("/callback", func(c *gin.Context) {
+
+		events, err := bot.ParseRequest(c.Request)
+		if err != nil {
+			if err == linebot.ErrInvalidSignature {
+				c.Writer.WriteHeader(400)
+			} else {
+				c.Writer.WriteHeader(500)
+			}
+			return
+		}
+
+		for _, event := range events {
+			if event.Type == linebot.EventTypeMessage {
+				switch message := event.Message.(type) {
+				case *linebot.TextMessage:
+					replayMessage := requestChatGpt(message.Text)
+					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replayMessage+"ガウ!")).Do(); err != nil {
+						fmt.Println(err)
+					}
+				case *linebot.StickerMessage:
+					replyMessage := fmt.Sprintf("sticker id is %s, stickerResourceType is %s", message.StickerID, message.StickerResourceType)
+					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replyMessage)).Do(); err != nil {
+						fmt.Println(err)
+					}
+				}
+			}
+		}
+
+	})
+
+	router.Run(":3000")
 }
