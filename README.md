@@ -1,11 +1,19 @@
-# Golang Chat GPT Test
+# GPT3.5 reply line bot
+
+GPT3.5 replies to the bot
+
+## Environment
+
+Set to environment variable or .env
+
+```env
+CHAT_GPT_APIKEY="{openai apikey}"
+LINE_BOT_CHANNEL_SECRET="{linebot channel secret}"
+LINE_BOT_CHANNEL_TOKEN="{linebot channel token}"
+```
 
 ## Run
 
 ```go
 go run main.go
 ```
-
-## Demo
-
-![output](https://github.com/haru-24/go_chatgpt_test/assets/88644715/7578de61-0e22-4606-9793-37fcfc4c1a62)
