@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/haru-24/go_chatgpt_test/model"
@@ -78,6 +80,29 @@ func requestChatGpt(reqMessage string) string {
 	return return_msg
 }
 
+func convertDogLang(message string)string{
+	mathRandam := rand.Intn(8)
+	end_word := "ガウ！"
+	if mathRandam <= 3{
+		end_word = "ガウ！"
+	}else if 4<= mathRandam && mathRandam<=5{
+		end_word = "ガオ！"
+	}else if 6 <= mathRandam && mathRandam <= 8 {
+		end_word = "ワン！"
+	}
+
+	var responceMessage string
+	responceMessage = strings.Replace(message, "です。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "ります。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "でしょう。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "る。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "ください。", end_word, -1)
+	if !strings.Contains(responceMessage, end_word){
+		responceMessage = responceMessage + end_word
+	}
+	return responceMessage
+}
+
 func main() {
 	loadEnv()
 
@@ -112,7 +137,8 @@ func main() {
 				switch message := event.Message.(type) {
 				case *linebot.TextMessage:
 					replayMessage := requestChatGpt(message.Text)
-					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replayMessage+"ガウ!")).Do(); err != nil {
+					convertDogLang := convertDogLang(replayMessage)
+					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(convertDogLang)).Do(); err != nil {
 						fmt.Println(err)
 					}
 				case *linebot.StickerMessage:
