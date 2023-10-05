@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/haru-24/go_chatgpt_test/model"
@@ -78,6 +79,18 @@ func requestChatGpt(reqMessage string) string {
 	return return_msg
 }
 
+func convertDogLang(message string)string{
+	var responceMessage string
+	responceMessage = strings.Replace(message, "です。", "ガウ！", -1)
+	responceMessage = strings.Replace(responceMessage, "ります。", "ガウ！", -1)
+	responceMessage = strings.Replace(responceMessage, "でしょう。", "ガウ！", -1)
+	responceMessage = strings.Replace(responceMessage, "る。", "ガウ！", -1)
+	if !strings.Contains(responceMessage, "fg"){
+		responceMessage = strings.Replace(responceMessage, "る。", "ガウ！", -1)
+	}
+	return responceMessage
+}
+
 func main() {
 	loadEnv()
 
@@ -112,7 +125,8 @@ func main() {
 				switch message := event.Message.(type) {
 				case *linebot.TextMessage:
 					replayMessage := requestChatGpt(message.Text)
-					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replayMessage+"ガウ!")).Do(); err != nil {
+					convertDogLang := convertDogLang(replayMessage)
+					if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(convertDogLang)).Do(); err != nil {
 						fmt.Println(err)
 					}
 				case *linebot.StickerMessage:
