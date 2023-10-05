@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -80,13 +81,24 @@ func requestChatGpt(reqMessage string) string {
 }
 
 func convertDogLang(message string)string{
+	mathRandam := rand.Intn(8)
+	end_word := "ガウ！"
+	if mathRandam <= 3{
+		end_word = "ガウ！"
+	}else if 4<= mathRandam && mathRandam<=5{
+		end_word = "ガオ！"
+	}else if 6 <= mathRandam && mathRandam <= 8 {
+		end_word = "ワン！"
+	}
+
 	var responceMessage string
-	responceMessage = strings.Replace(message, "です。", "ガウ！", -1)
-	responceMessage = strings.Replace(responceMessage, "ります。", "ガウ！", -1)
-	responceMessage = strings.Replace(responceMessage, "でしょう。", "ガウ！", -1)
-	responceMessage = strings.Replace(responceMessage, "る。", "ガウ！", -1)
-	if !strings.Contains(responceMessage, "fg"){
-		responceMessage = strings.Replace(responceMessage, "る。", "ガウ！", -1)
+	responceMessage = strings.Replace(message, "です。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "ります。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "でしょう。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "る。", end_word, -1)
+	responceMessage = strings.Replace(responceMessage, "ください。", end_word, -1)
+	if !strings.Contains(responceMessage, end_word){
+		responceMessage = responceMessage + end_word
 	}
 	return responceMessage
 }
